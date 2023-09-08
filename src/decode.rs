@@ -171,7 +171,7 @@ pub fn decode_object(content: Vec<char>) -> String {
                 content[old_traveller + 1..end - 1].to_vec()
             } else {
                 traveller += 1;
-                println!("{} {}", char_to_check, return_value);
+
                 vec![char_to_check]
             };
 
@@ -190,13 +190,40 @@ fn get_end_index(content: Vec<char>) -> usize {
     let mut num_e = 1;
 
     while num_e > 0 {
-        let char_to_check = *content.get(index).expect("Cannot unwrap");
+        let mut char_being_checked = *content.get(index).expect("Cannot unwrap");
+        // println!("char_being_checked = {}", char_being_checked);
 
-        if ['d', 'l', 'i'].contains(&char_to_check) {
+        if char_being_checked == ':' {
+            let old_index = index;
+            let mut length = 0;
+            let mut multiplier = 1;
+
+            while char_being_checked.is_ascii_digit() && index > 0 {
+                index -= 1;
+                char_being_checked = *content.get(index).expect("Cannot unwrap");
+
+                length += (char_being_checked as usize - 48) * multiplier;
+
+                multiplier *= 10;
+            }
+
+            index = old_index + length + 1;
+            // println!(
+            //     "{} {} {} {} {}",
+            //     index,
+            //     old_index,
+            //     length,
+            //     char_being_checked,
+            //     content.len()
+            // );
+            char_being_checked = *content.get(index).expect("Cannot unwrap");
+        }
+
+        if ['d', 'l', 'i'].contains(&char_being_checked) {
             num_e += 1;
         }
 
-        if char_to_check == 'e' {
+        if char_being_checked == 'e' {
             num_e -= 1;
         }
 
@@ -207,7 +234,7 @@ fn get_end_index(content: Vec<char>) -> usize {
 }
 
 pub fn decoder(content: String, start: usize) -> (String, usize) {
-    println!("{} {}", content, start);
+    // println!("{content}");
     let temp_iterable = content.chars().collect::<Vec<char>>();
     let iterable = temp_iterable[start..].to_vec();
 
@@ -217,9 +244,58 @@ pub fn decoder(content: String, start: usize) -> (String, usize) {
     let end;
 
     if ['d', 'l'].contains(&char_to_check) {
-        let index = content.len() - 1;
+        let mut index = traveller + 1;
+        let mut num_e = 1;
 
-        end = index;
+        while num_e > 0 {
+            let mut char_being_checked = *iterable.get(index).expect("Cannot unwrap");
+            // println!("char_being_checked = {}", char_being_checked);
+
+            if char_being_checked == ':' {
+                let old_index = index;
+                index -= 1;
+                char_being_checked = *iterable.get(index).expect("Cannot unwrap");
+                let mut length = 0;
+                let mut multiplier = 1;
+
+                while char_being_checked.is_ascii_digit() && index > traveller {
+                    // println!(
+                    //     "{length} {multiplier} {char_being_checked} this {}",
+                    //     char_being_checked.is_ascii_digit()
+                    // );
+
+                    length += (char_being_checked as usize - 48) * multiplier;
+
+                    // println!("{length} {multiplier} {char_being_checked} this");
+                    multiplier *= 10;
+                    index -= 1;
+                    char_being_checked = *iterable.get(index).expect("Cannot unwrap");
+                }
+
+                index = old_index + length + 1;
+                // println!(
+                //     "{} {} {} {} {} this not",
+                //     index,
+                //     old_index,
+                //     length,
+                //     char_being_checked,
+                //     iterable.len()
+                // );
+                char_being_checked = *iterable.get(index).expect("Cannot unwrap");
+            }
+
+            if ['d', 'l', 'i'].contains(&char_being_checked) {
+                num_e += 1;
+            }
+
+            if char_being_checked == 'e' {
+                num_e -= 1;
+            }
+
+            index += 1;
+        }
+
+        end = index - 1;
 
         let mut return_val = String::from("{ ");
         let mut checker = 1;
@@ -229,7 +305,7 @@ pub fn decoder(content: String, start: usize) -> (String, usize) {
         let mut i = 0;
 
         while offset < end - 1 {
-            (check, checker) = decoder(content[offset..index].to_string(), 0);
+            (check, checker) = decoder(content[offset..end].to_string(), 0);
             offset += checker;
 
             return_val.push_str(&check);
@@ -240,13 +316,11 @@ pub fn decoder(content: String, start: usize) -> (String, usize) {
                 return_val.push_str(", ");
             }
             i += 1;
-
-            println!("{return_val} fin");
         }
 
         return_val.push_str(" }");
 
-        (return_val, end + 2)
+        (return_val, end + 1)
     } else if char_to_check == 'i' {
         let mut index = traveller + 1;
         let mut num = 0;
@@ -264,20 +338,17 @@ pub fn decoder(content: String, start: usize) -> (String, usize) {
         (format!("{num}"), index + 1)
     } else {
         let mut num = char_to_check as usize - 48;
-        // println!("{}", char_to_check);
+        //
 
         let mut index = traveller + 1;
         let mut char_being_checked = *iterable.get(index).expect("Cannot unwrap");
         while char_being_checked != ':' {
-            // println!("{} {}", char_being_checked, num);
             num *= 10;
             num += char_being_checked as usize - 48;
 
             index += 1;
             char_being_checked = *iterable.get(index).expect("Cannot unwrap");
         }
-
-        // println!("{} {}", index, num);
 
         let group = iterable[index + 1..index + 1 + num].to_vec();
 
