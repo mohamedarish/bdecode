@@ -206,6 +206,93 @@ fn get_end_index(content: Vec<char>) -> usize {
     index
 }
 
+pub fn decoder(content: String, start: usize) -> (String, usize) {
+    println!("{} {}", content, start);
+    let temp_iterable = content.chars().collect::<Vec<char>>();
+    let iterable = temp_iterable[start..].to_vec();
+
+    let traveller = start;
+
+    let char_to_check = *iterable.get(traveller).expect("Cannot unwrap");
+    let end;
+
+    if ['d', 'l'].contains(&char_to_check) {
+        let index = content.len() - 1;
+
+        end = index;
+
+        let mut return_val = String::from("{ ");
+        let mut checker = 1;
+
+        let mut check;
+        let mut offset = traveller + checker;
+        let mut i = 0;
+
+        while offset < end - 1 {
+            (check, checker) = decoder(content[offset..index].to_string(), 0);
+            offset += checker;
+
+            return_val.push_str(&check);
+
+            if i % 2 == 0 {
+                return_val.push_str(": ");
+            } else if offset < end - 1 {
+                return_val.push_str(", ");
+            }
+            i += 1;
+
+            println!("{return_val} fin");
+        }
+
+        return_val.push_str(" }");
+
+        (return_val, end + 2)
+    } else if char_to_check == 'i' {
+        let mut index = traveller + 1;
+        let mut num = 0;
+
+        let mut char_being_checked = *iterable.get(index).expect("Cannot unwrap");
+        while char_being_checked != 'e' {
+            num *= 10;
+            num += char_being_checked as usize - 48;
+
+            index += 1;
+
+            char_being_checked = *iterable.get(index).expect("Cannot unwrap");
+        }
+
+        (format!("{num}"), index + 1)
+    } else {
+        let mut num = char_to_check as usize - 48;
+        // println!("{}", char_to_check);
+
+        let mut index = traveller + 1;
+        let mut char_being_checked = *iterable.get(index).expect("Cannot unwrap");
+        while char_being_checked != ':' {
+            // println!("{} {}", char_being_checked, num);
+            num *= 10;
+            num += char_being_checked as usize - 48;
+
+            index += 1;
+            char_being_checked = *iterable.get(index).expect("Cannot unwrap");
+        }
+
+        // println!("{} {}", index, num);
+
+        let group = iterable[index + 1..index + 1 + num].to_vec();
+
+        let mut return_val = String::new();
+
+        for c in group {
+            return_val.push(c);
+        }
+
+        end = index + 1 + num;
+
+        (return_val, end)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::decode::decode;
