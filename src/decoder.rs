@@ -1,4 +1,4 @@
-use crate::{Error, Result};
+use crate::Result;
 
 struct Bencode {
     info: InfoDictionary,
@@ -32,11 +32,11 @@ enum Name {
 }
 
 impl Bencode {
-    fn from(content: String) -> Result<Self> {
+    fn from(_content: &str) -> Result<Self> {
         todo!("Implement the from function")
     }
 
-    fn from_file(filename: String) -> Result<Self> {
+    fn from_file(_filename: &str) -> Result<Self> {
         todo!("Implement the from_file function")
     }
 }

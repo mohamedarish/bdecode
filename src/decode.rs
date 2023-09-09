@@ -1,4 +1,5 @@
-pub fn decode(content: String) -> String {
+#[must_use]
+pub fn decode(content: &str) -> String {
     let iteratable = content.chars().collect::<Vec<char>>();
 
     let mut return_val = String::new();
@@ -105,10 +106,10 @@ pub fn decode(content: String) -> String {
 
         if *iteratable.get(traveller).expect("Cannot unwrap") == 'd' {
             return_val.push('{');
-            return_val.push_str(&decode(res));
+            return_val.push_str(&decode(&res));
         } else if *iteratable.get(traveller).expect("Cannot unwrap") == 'l' {
             return_val.push('[');
-            return_val.push_str(&decode(res));
+            return_val.push_str(&decode(&res));
         } else {
             return_val.push_str(&res);
         }
@@ -129,7 +130,8 @@ pub fn decode(content: String) -> String {
     return_val
 }
 
-pub fn decode_object(content: Vec<char>) -> String {
+#[must_use]
+pub fn decode_object(content: &[char]) -> String {
     let mut traveller = 0;
 
     let mut return_value = String::new();
@@ -137,13 +139,13 @@ pub fn decode_object(content: Vec<char>) -> String {
     while traveller < content.len() {
         let char_to_check = *content.get(traveller).expect("Cannot unwrap");
         if ['d', 'l'].contains(&char_to_check) {
-            let end = traveller + get_end_index(content[traveller + 1..].to_vec());
+            let end = traveller + get_end_index(&content[traveller + 1..]);
 
             let old_traveller = traveller;
 
             traveller += end + 1 - traveller;
 
-            return_value.push_str(&decode_object(content[old_traveller + 1..end].to_vec()));
+            return_value.push_str(&decode_object(&content[old_traveller + 1..end]));
         } else {
             let group = if char_to_check.is_ascii_digit() {
                 let mut len = 0;
@@ -161,9 +163,9 @@ pub fn decode_object(content: Vec<char>) -> String {
 
                 traveller += index + len - traveller + 1;
 
-                content[index + 1..index + len + 1].to_vec()
+                content[(index + 1)..=(index + len)].to_vec()
             } else if char_to_check == 'i' {
-                let end = traveller + get_end_index(content[traveller..].to_vec());
+                let end = traveller + get_end_index(&content[traveller..]);
 
                 let old_traveller = traveller;
                 traveller = end + 1;
@@ -184,7 +186,7 @@ pub fn decode_object(content: Vec<char>) -> String {
     return_value
 }
 
-fn get_end_index(content: Vec<char>) -> usize {
+fn get_end_index(content: &[char]) -> usize {
     let mut index = 1;
 
     let mut num_e = 1;
@@ -233,7 +235,8 @@ fn get_end_index(content: Vec<char>) -> usize {
     index
 }
 
-pub fn decoder(content: String, start: usize) -> (String, usize) {
+#[must_use]
+pub fn decoder(content: &str, start: usize) -> (String, usize) {
     // println!("{content}");
     let temp_iterable = content.chars().collect::<Vec<char>>();
     let iterable = temp_iterable[start..].to_vec();
@@ -305,7 +308,7 @@ pub fn decoder(content: String, start: usize) -> (String, usize) {
         let mut i = 0;
 
         while offset < end - 1 {
-            (check, checker) = decoder(content[offset..end].to_string(), 0);
+            (check, checker) = decoder(&content[offset..end], 0);
             offset += checker;
 
             return_val.push_str(&check);
@@ -361,19 +364,5 @@ pub fn decoder(content: String, start: usize) -> (String, usize) {
         end = index + 1 + num;
 
         (return_val, end)
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use crate::decode::decode;
-
-    #[test]
-    fn tester() {
-        let res = decode("l3:bar4:spam3:fooi42ee".to_string());
-
-        println!("{res}");
-
-        panic!()
     }
 }
