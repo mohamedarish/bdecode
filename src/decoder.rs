@@ -1,6 +1,6 @@
-use crate::Result;
+use crate::{bencode::Bencode, Result};
 
-struct Bencode {
+pub struct Torrent {
     info: InfoDictionary,
     announce: String,
     announce_list: Option<Vec<String>>,
@@ -31,12 +31,18 @@ enum Name {
     DirectoryName(String),
 }
 
-impl Bencode {
-    fn from(_content: &str) -> Result<Self> {
+impl Torrent {
+    pub fn from(content: &str) -> Self {
+        let iterable = content.chars().collect::<Vec<char>>();
+
+        let end = Bencode::find_end(&iterable);
+
+        println!("{:?}", iterable[1..end].to_vec());
+
         todo!("Implement the from function")
     }
 
-    fn from_file(_filename: &str) -> Result<Self> {
+    fn from_file(_filename: &str) -> Self {
         todo!("Implement the from_file function")
     }
 }

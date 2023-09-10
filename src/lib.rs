@@ -7,6 +7,7 @@
 
 use std::{error, result};
 
+pub mod bencode;
 pub mod decode;
 pub mod decoder;
 
