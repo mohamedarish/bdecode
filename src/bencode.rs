@@ -8,7 +8,7 @@ pub struct Bencode;
 #[derive(PartialEq, Eq, Debug)]
 pub enum Types {
     Dictionary(HashMap<Types, Types>),
-    List(Box<[Types]>),
+    List(Vec<Types>),
     Integer(i32),
     StringType(String),
 }
@@ -23,7 +23,7 @@ impl Hash for Types {
                 }
             }
             Self::List(list) => {
-                for item in list.iter() {
+                for item in list {
                     item.hash(state);
                 }
             }
@@ -39,9 +39,9 @@ impl Hash for Types {
 
 impl Bencode {
     pub fn decode_dictionary(iterable: &[char]) -> Types {
-        println!("{:?}", iterable);
         let start = 0;
         let end = Self::find_end(iterable);
+
         let mut index = start + 1;
 
         let mut return_value = HashMap::<Types, Types>::new();
@@ -49,63 +49,9 @@ impl Bencode {
         while index < end - 1 {
             let mut char_to_check = *iterable.get(index).expect("Cannot unwrap");
 
-            println!("{char_to_check}");
-
-            println!("{} {} {:?}", index, end, return_value);
-
             let key = match char_to_check {
                 'i' => {
                     let num_end = index + Self::find_end(&iterable[index..end]);
-
-                    println!("{} {} num", end, num_end);
-
-                    let num = Self::parse_num(&iterable[index..num_end]);
-
-                    index = num_end + 1;
-
-                    Types::Integer(num.try_into().expect("Cannot unwrap"))
-                }
-                '0'..='9' => {
-                    let mut len = 0;
-
-                    while char_to_check != ':' {
-                        len *= 10;
-                        len += char_to_check as usize - 48;
-
-                        index += 1;
-                        char_to_check = *iterable.get(index).expect("Cannot unwrap");
-                    }
-
-                    let mut resultant = String::new();
-
-                    for &c in &iterable[index + 1..index + 1 + len] {
-                        resultant.push(c);
-                    }
-
-                    index += len + 1;
-
-                    Types::StringType(resultant)
-                }
-                _ => Types::StringType(String::new()),
-            };
-
-            char_to_check = *iterable.get(index).expect("Cannot unwrap");
-
-            println!("{char_to_check} middle");
-
-            println!("{} {} {:?} {:?} middle", index, end, return_value, key);
-
-            let value = match char_to_check {
-                'd' => {
-                    let dict_end = Self::find_end(&iterable[index + 1..end]);
-
-                    Types::StringType(String::from("dictionary"))
-                }
-                'l' => Types::StringType(String::from("list")),
-                'i' => {
-                    let num_end = index + Self::find_end(&iterable[index..end]);
-
-                    println!("{} {}", index, num_end);
 
                     let num = Self::parse_num(&iterable[index + 1..num_end]);
 
@@ -137,11 +83,58 @@ impl Bencode {
                 _ => Types::StringType(String::new()),
             };
 
-            println!("{} {} after", index, end);
+            char_to_check = *iterable.get(index).expect("Cannot unwrap");
+
+            let value = match char_to_check {
+                'd' => {
+                    let dict_end = index + Self::find_end(&iterable[index..end]);
+
+                    let old_index = index;
+                    index = dict_end + 1;
+                    Self::decode_dictionary(&iterable[old_index..=dict_end])
+                }
+                'l' => {
+                    let list_end = index + Self::find_end(&iterable[index..end]);
+
+                    let old_index = index;
+                    index = list_end + 1;
+
+                    Self::decode_list(&iterable[old_index..=list_end])
+                }
+                'i' => {
+                    let num_end = index + Self::find_end(&iterable[index..end]);
+
+                    let num = Self::parse_num(&iterable[index + 1..num_end]);
+
+                    index = num_end + 1;
+
+                    Types::Integer(num.try_into().expect("Cannot unwrap"))
+                }
+                '0'..='9' => {
+                    let mut len = 0;
+
+                    while char_to_check != ':' {
+                        len *= 10;
+                        len += char_to_check as usize - 48;
+
+                        index += 1;
+                        char_to_check = *iterable.get(index).expect("Cannot unwrap");
+                    }
+
+                    let mut resultant = String::new();
+
+                    for &c in &iterable[index + 1..index + 1 + len] {
+                        resultant.push(c);
+                    }
+
+                    index += len + 1;
+
+                    Types::StringType(resultant)
+                }
+                _ => Types::StringType(String::new()),
+            };
 
             return_value.insert(key, value);
-
-            println!("{} {} {:?} after", index, end, return_value);
         }
 
         Types::Dictionary(return_value)
@@ -158,6 +151,69 @@ impl Bencode {
         num
     }
 
+    fn decode_list(iterable: &[char]) -> Types {
+        let mut index = 1;
+        let end = iterable.len() - 1;
+
+        let mut return_value = Vec::<Types>::new();
+
+        while index < end {
+            let mut char_to_check = *iterable.get(index).expect("Cannot unwrap");
+
+            let element = match char_to_check {
+                'd' => {
+                    let dict_end = index + Self::find_end(&iterable[index..end]);
+
+                    let old_index = index;
+                    index = dict_end + 1;
+                    Self::decode_dictionary(&iterable[old_index..=dict_end])
+                }
+                'l' => {
+                    let list_end = Self::find_end(&iterable[index..=end]);
+
+                    index = list_end;
+
+                    Self::decode_list(&iterable[index..=list_end])
+                }
+                'i' => {
+                    let num_end = index + Self::find_end(&iterable[index..end]);
+
+                    let num = Self::parse_num(&iterable[index + 1..num_end]);
+
+                    index = num_end + 1;
+
+                    Types::Integer(num.try_into().expect("Cannot unwrap"))
+                }
+                '0'..='9' => {
+                    let mut len = 0;
+
+                    while char_to_check != ':' {
+                        len *= 10;
+                        len += char_to_check as usize - 48;
+
+                        index += 1;
+                        char_to_check = *iterable.get(index).expect("Cannot unwrap");
+                    }
+
+                    let mut resultant = String::new();
+
+                    for &c in &iterable[index + 1..index + 1 + len] {
+                        resultant.push(c);
+                    }
+
+                    index += len + 1;
+
+                    Types::StringType(resultant)
+                }
+                _ => Types::StringType(String::new()),
+            };
+
+            return_value.push(element);
+        }
+
+        Types::List(return_value)
+    }
+
     pub fn find_end(iterable: &[char]) -> usize {
         let mut index = 1;
 
@@ -165,8 +221,6 @@ impl Bencode {
 
         while num_e > 0 {
             let mut char_being_checked = *iterable.get(index).expect("Cannot unwrap");
-
-            println!("{} {} {} inside end", num_e, index, char_being_checked);
 
             if char_being_checked == ':' {
                 let old_index = index;
@@ -196,11 +250,63 @@ impl Bencode {
                 num_e -= 1;
             }
 
-            println!("{} {} {} inside end2", num_e, index, char_being_checked);
-
             index += 1;
         }
 
         index - 1
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::collections::HashMap;
+
+    use super::{Bencode, Types};
+
+    #[test]
+    fn check_dict_initialization() {
+        let str_to_check =
+            String::from("d3:bar4:spam3:fooi42ei43edi59e4:reedi45ei1ee1:rli44e2:asee");
+
+        let iterable = str_to_check.chars().collect::<Vec<char>>();
+
+        let Types::Dictionary(final_dictionary) = Bencode::decode_dictionary(&iterable) else {
+            panic!("Cannot parse valid dictionary")
+        };
+
+        let keys = final_dictionary.keys();
+
+        let expected_keys = [
+            Types::StringType(String::from("foo")),
+            Types::StringType(String::from("bar")),
+            Types::Integer(43),
+            Types::StringType(String::from("r")),
+        ];
+
+        for key in keys {
+            assert!(expected_keys.contains(key));
+        }
+
+        let values = final_dictionary.values();
+
+        let mut inner_dict = HashMap::<Types, Types>::new();
+
+        inner_dict.insert(Types::Integer(59), Types::StringType(String::from("reed")));
+
+        inner_dict.insert(Types::Integer(45), Types::Integer(1));
+
+        let expected_values = [
+            Types::StringType(String::from("spam")),
+            Types::Integer(42),
+            Types::Dictionary(inner_dict),
+            Types::List(vec![
+                Types::Integer(44),
+                Types::StringType(String::from("as")),
+            ]),
+        ];
+
+        for value in values {
+            assert!(expected_values.contains(value));
+        }
     }
 }

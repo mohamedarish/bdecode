@@ -1,4 +1,7 @@
-use crate::{bencode::Bencode, Result};
+use crate::{
+    bencode::{Bencode, Types},
+    Error, Result,
+};
 
 pub struct Torrent {
     info: InfoDictionary,
@@ -32,14 +35,20 @@ enum Name {
 }
 
 impl Torrent {
-    pub fn from(content: &str) -> Self {
+    pub fn from(content: &str) -> Result<Self> {
         let iterable = content.chars().collect::<Vec<char>>();
 
-        let end = Bencode::find_end(&iterable);
+        let Types::Dictionary(collected_content) = Bencode::decode_dictionary(&iterable) else {
+            return Err(Error::from("The provided file is invalid"));
+        };
 
-        println!("{:?}", iterable[1..end].to_vec());
+        println!("{:?}", collected_content);
 
-        todo!("Implement the from function")
+        let keys = collected_content.keys();
+
+        println!("{:?}", keys);
+
+        todo!("Not yet implemented")
     }
 
     fn from_file(_filename: &str) -> Self {
