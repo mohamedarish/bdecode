@@ -151,7 +151,7 @@ impl Bencode {
         num
     }
 
-    fn decode_list(iterable: &[char]) -> Types {
+    pub fn decode_list(iterable: &[char]) -> Types {
         let mut index = 1;
         let end = iterable.len() - 1;
 
@@ -169,11 +169,12 @@ impl Bencode {
                     Self::decode_dictionary(&iterable[old_index..=dict_end])
                 }
                 'l' => {
-                    let list_end = Self::find_end(&iterable[index..=end]);
+                    let list_end = index + Self::find_end(&iterable[index..end]);
 
-                    index = list_end;
+                    let old_index = index;
+                    index = list_end + 1;
 
-                    Self::decode_list(&iterable[index..=list_end])
+                    Self::decode_list(&iterable[old_index..=list_end])
                 }
                 'i' => {
                     let num_end = index + Self::find_end(&iterable[index..end]);
@@ -307,6 +308,41 @@ mod test {
 
         for value in values {
             assert!(expected_values.contains(value));
+        }
+    }
+
+    #[test]
+    fn check_list_initialization() {
+        let str_to_check = String::from("li42e4:spam3:fooi199ed3:key5:valueeli1ei2ei3eee");
+
+        let iterable = str_to_check.chars().collect::<Vec<char>>();
+
+        let Types::List(final_list) = Bencode::decode_list(&iterable) else {
+            panic!("Cannot parse the given list");
+        };
+
+        let mut inner_dict = HashMap::<Types, Types>::new();
+
+        inner_dict.insert(
+            Types::StringType(String::from("key")),
+            Types::StringType(String::from("value")),
+        );
+
+        let expected_list = vec![
+            Types::Integer(42),
+            Types::StringType(String::from("spam")),
+            Types::StringType(String::from("foo")),
+            Types::Integer(199),
+            Types::Dictionary(inner_dict),
+            Types::List(vec![
+                Types::Integer(1),
+                Types::Integer(2),
+                Types::Integer(3),
+            ]),
+        ];
+
+        for element in final_list {
+            assert!(expected_list.contains(&element));
         }
     }
 }
