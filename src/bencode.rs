@@ -9,7 +9,7 @@ pub struct Bencode;
 pub enum Types {
     Dictionary(HashMap<Types, Types>),
     List(Vec<Types>),
-    Integer(i32),
+    Integer(i64),
     StringType(String),
 }
 
@@ -245,8 +245,6 @@ impl Bencode {
                 index = old_index + length + 1;
 
                 newest_string = index - 1;
-
-                let cur_str = &iterable[index - length..index];
 
                 char_being_checked = *iterable.get(index).expect("Cannot unwrap");
             }
