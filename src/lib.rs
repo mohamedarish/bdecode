@@ -9,7 +9,7 @@ use std::{error, result};
 
 pub mod bencode;
 pub mod decode;
-pub mod decoder;
+pub mod torrent;
 
 pub type Error = Box<dyn error::Error>;
 pub type Result<T> = result::Result<T, Error>;

@@ -220,25 +220,33 @@ impl Bencode {
 
         let mut num_e = 1;
 
+        let mut newest_string = 0;
+
         while num_e > 0 {
             let mut char_being_checked = *iterable.get(index).expect("Cannot unwrap");
 
             if char_being_checked == ':' {
                 let old_index = index;
+
                 index -= 1;
                 char_being_checked = *iterable.get(index).expect("Cannot unwrap");
                 let mut length = 0;
                 let mut multiplier = 1;
 
-                while char_being_checked.is_ascii_digit() && index > 0 {
+                while char_being_checked.is_ascii_digit() && index > newest_string {
                     length += (char_being_checked as usize - 48) * multiplier;
 
                     multiplier *= 10;
                     index -= 1;
+
                     char_being_checked = *iterable.get(index).expect("Cannot unwrap");
                 }
 
                 index = old_index + length + 1;
+
+                newest_string = index - 1;
+
+                let cur_str = &iterable[index - length..index];
 
                 char_being_checked = *iterable.get(index).expect("Cannot unwrap");
             }
