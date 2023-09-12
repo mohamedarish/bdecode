@@ -7,7 +7,7 @@ pub struct Bencode;
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum Types {
-    Dictionary(HashMap<Types, Types>),
+    Dictionary(HashMap<String, Types>),
     List(Vec<Types>),
     Integer(i64),
     StringType(String),
@@ -44,21 +44,12 @@ impl Bencode {
 
         let mut index = start + 1;
 
-        let mut return_value = HashMap::<Types, Types>::new();
+        let mut return_value = HashMap::<String, Types>::new();
 
         while index < end - 1 {
             let mut char_to_check = *iterable.get(index).expect("Cannot unwrap");
 
             let key = match char_to_check {
-                'i' => {
-                    let num_end = index + Self::find_end(&iterable[index..end]);
-
-                    let num = Self::parse_num(&iterable[index + 1..num_end]);
-
-                    index = num_end + 1;
-
-                    Types::Integer(num.try_into().expect("Cannot unwrap"))
-                }
                 '0'..='9' => {
                     let mut len = 0;
 
@@ -70,17 +61,13 @@ impl Bencode {
                         char_to_check = *iterable.get(index).expect("Cannot unwrap");
                     }
 
-                    let mut resultant = String::new();
-
-                    for &c in &iterable[index + 1..index + 1 + len] {
-                        resultant.push(c);
-                    }
+                    let mut resultant = Self::parse_string(&iterable[index + 1..end], len);
 
                     index += len + 1;
 
-                    Types::StringType(resultant)
+                    resultant
                 }
-                _ => Types::StringType(String::new()),
+                _ => String::new(),
             };
 
             char_to_check = *iterable.get(index).expect("Cannot unwrap");
@@ -121,11 +108,7 @@ impl Bencode {
                         char_to_check = *iterable.get(index).expect("Cannot unwrap");
                     }
 
-                    let mut resultant = String::new();
-
-                    for &c in &iterable[index + 1..index + 1 + len] {
-                        resultant.push(c);
-                    }
+                    let resultant = Self::parse_string(&iterable[index + 1..end], len);
 
                     index += len + 1;
 
@@ -149,6 +132,18 @@ impl Bencode {
         }
 
         num
+    }
+
+    fn parse_string(iterable: &[char], length: usize) -> String {
+        let g = &iterable[..length];
+
+        let mut final_string = String::new();
+
+        for &c in g {
+            final_string.push(c);
+        }
+
+        final_string
     }
 
     pub fn decode_list(iterable: &[char]) -> Types {

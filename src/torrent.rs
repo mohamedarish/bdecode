@@ -45,91 +45,22 @@ impl Torrent {
 
         // println!("{:?}", collected_content);
 
-        let mut keys = Vec::<&Types>::new();
+        let mut keys = Vec::<String>::new();
 
         for key in collected_content.keys() {
-            keys.push(key);
+            keys.push(key.to_string());
         }
 
-        // println!("{keys:?}");
+        println!("{keys:?}");
 
-        let Some(Types::StringType(announce)) =
-            collected_content.get(&Types::StringType("announce".to_string()))
-        else {
+        let Some(Types::StringType(announce)) = collected_content.get("announce") else {
             return Err(Error::from("Cannot get announce"));
         };
 
         println!("annouce {announce}");
 
-        let Some(Types::Dictionary(info_dictionary)) =
-            collected_content.get(&Types::StringType("info".to_string()))
-        else {
-            return Err(Error::from("Cannot get info"));
-        };
-
-        // println!("{info_dictionary:?}");
-
-        let mut info_keys = Vec::<&Types>::new();
-
-        for key in info_dictionary.keys() {
-            info_keys.push(key);
-        }
-
-        println!("info_dictionary");
-
-        let Some(Types::StringType(pieces)) =
-            info_dictionary.get(&Types::StringType("pieces".to_string()))
-        else {
-            return Err(Error::from("Cannot get pieces"));
-        };
-
-        println!("pieces");
-
-        let Some(Types::StringType(nam)) =
-            info_dictionary.get(&Types::StringType("name".to_string()))
-        else {
-            return Err(Error::from("Cannot get name field"));
-        };
-
-        let name = if info_keys.contains(&&Types::StringType("files".to_string())) {
-            Name::DirectoryName(nam.to_string())
-        } else {
-            Name::FileName(nam.to_string())
-        };
-
-        println!("name {name:?}");
-
-        let Some(Types::Integer(piece_length)) =
-            info_dictionary.get(&Types::StringType("piece length".to_string()))
-        else {
-            return Err(Error::from("Cannot get field piece length"));
-        };
-
-        println!("piece length {piece_length}");
-
-        println!(
-            "{:?}",
-            info_dictionary.get(&Types::StringType("length".to_string()))
-        );
-
-        let length = if info_keys.contains(&&Types::StringType("length".to_string())) {
-            let Some(Types::Integer(len)) =
-                info_dictionary.get(&Types::StringType("length".to_string()))
-            else {
-                return Err(Error::from("Cannot find valid key"));
-            };
-
-            Some(len)
-        } else {
-            None
-        };
-
-        println!("length {length:?}");
-
-        let created_by = if keys.contains(&&Types::StringType("created by".to_string())) {
-            let Some(Types::StringType(c_by)) =
-                collected_content.get(&Types::StringType("created by".to_string()))
-            else {
+        let created_by = if keys.contains(&"created by".to_string()) {
+            let Some(Types::StringType(c_by)) = collected_content.get("created by") else {
                 return Err(Error::from("Cannot find valid key"));
             };
 
@@ -140,10 +71,8 @@ impl Torrent {
 
         println!("created by {created_by:?}");
 
-        let creation_date = if keys.contains(&&Types::StringType("creation date".to_string())) {
-            let Some(Types::Integer(c_date)) =
-                collected_content.get(&Types::StringType("creation date".to_string()))
-            else {
+        let creation_date = if keys.contains(&"creation date".to_string()) {
+            let Some(Types::Integer(c_date)) = collected_content.get("creation date") else {
                 return Err(Error::from("Cannot find valid key"));
             };
 
@@ -154,10 +83,8 @@ impl Torrent {
 
         println!("creation date {creation_date:?}");
 
-        let comment = if keys.contains(&&Types::StringType("comment".to_string())) {
-            let Some(Types::StringType(comm)) =
-                collected_content.get(&Types::StringType("comment".to_string()))
-            else {
+        let comment = if keys.contains(&"comment".to_string()) {
+            let Some(Types::StringType(comm)) = collected_content.get("comment") else {
                 return Err(Error::from("Cannot find valid entry"));
             };
 
@@ -168,10 +95,8 @@ impl Torrent {
 
         println!("comment {comment:?}");
 
-        let encoding = if keys.contains(&&Types::StringType("encoding".to_string())) {
-            let Some(Types::StringType(enc)) =
-                collected_content.get(&Types::StringType("encoding".to_string()))
-            else {
+        let encoding = if keys.contains(&"encoding".to_string()) {
+            let Some(Types::StringType(enc)) = collected_content.get("encoding") else {
                 return Err(Error::from("Cannot find valid entry"));
             };
 
@@ -182,8 +107,97 @@ impl Torrent {
 
         println!("encoding {encoding:?}");
 
-        println!("{keys:?}\ninfo {info_keys:?}");
+        let announce_list = if keys.contains(&"announce-list".to_string()) {
+            let Some(Types::List(a_list)) = collected_content.get("announce-list") else {
+                return Err(Error::from("Cannot find valid entry"));
+            };
 
+            let mut announce_list = Vec::new();
+
+            for x in a_list {
+                if let Types::List(ele) = x {
+                    for w in ele {
+                        if let Types::StringType(ann) = w {
+                            announce_list.push(ann);
+                        }
+                    }
+                };
+            }
+
+            Some(announce_list)
+        } else {
+            None
+        };
+
+        println!("announce list {announce_list:?}");
+
+        // let Some(Types::Dictionary(info_dictionary)) =
+        //     collected_content.get(&Types::StringType("info".to_string()))
+        // else {
+        //     return Err(Error::from("Cannot get info"));
+        // };
+        //
+        // // println!("{info_dictionary:?}");
+        //
+        // let mut info_keys = Vec::<&Types>::new();
+        //
+        // for key in info_dictionary.keys() {
+        //     info_keys.push(key);
+        // }
+        //
+        // println!("info_dictionary");
+        //
+        // let Some(Types::StringType(pieces)) =
+        //     info_dictionary.get(&Types::StringType("pieces".to_string()))
+        // else {
+        //     return Err(Error::from("Cannot get pieces"));
+        // };
+        //
+        // println!("pieces");
+        //
+        // let Some(Types::StringType(nam)) =
+        //     info_dictionary.get(&Types::StringType("name".to_string()))
+        // else {
+        //     return Err(Error::from("Cannot get name field"));
+        // };
+        //
+        // let name = if info_keys.contains(&&Types::StringType("files".to_string())) {
+        //     Name::DirectoryName(nam.to_string())
+        // } else {
+        //     Name::FileName(nam.to_string())
+        // };
+        //
+        // println!("name {name:?}");
+        //
+        // let Some(Types::Integer(piece_length)) =
+        //     info_dictionary.get(&Types::StringType("piece length".to_string()))
+        // else {
+        //     return Err(Error::from("Cannot get field piece length"));
+        // };
+        //
+        // println!("piece length {piece_length}");
+        //
+        // println!(
+        //     "{:?}",
+        //     info_dictionary.get(&Types::StringType("length".to_string()))
+        // );
+        //
+        // let length = if info_keys.contains(&&Types::StringType("length".to_string())) {
+        //     let Some(Types::Integer(len)) =
+        //         info_dictionary.get(&Types::StringType("length".to_string()))
+        //     else {
+        //         return Err(Error::from("Cannot find valid key"));
+        //     };
+        //
+        //     Some(len)
+        // } else {
+        //     None
+        // };
+        //
+        // println!("length {length:?}");
+        //
+        // println!("{keys:?}\ninfo {info_keys:?}");
+        //
         todo!("Not finished implementation")
     }
 }
