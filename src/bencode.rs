@@ -268,7 +268,7 @@ mod test {
     #[test]
     fn check_dict_initialization() {
         let str_to_check =
-            String::from("d3:bar4:spam3:fooi42ei43edi59e4:reedi45ei1ee1:rli44e2:asee");
+            String::from("d3:bar4:spam3:fooi42e4:newed4:wowe4:reed2:afi1ee1:rli44e2:asee");
 
         let iterable = str_to_check.chars().collect::<Vec<char>>();
 
@@ -279,10 +279,10 @@ mod test {
         let keys = final_dictionary.keys();
 
         let expected_keys = [
-            Types::StringType(String::from("foo")),
-            Types::StringType(String::from("bar")),
-            Types::Integer(43),
-            Types::StringType(String::from("r")),
+            String::from("foo"),
+            String::from("bar"),
+            String::from("newe"),
+            String::from("r"),
         ];
 
         for key in keys {
@@ -291,11 +291,14 @@ mod test {
 
         let values = final_dictionary.values();
 
-        let mut inner_dict = HashMap::<Types, Types>::new();
+        let mut inner_dict = HashMap::<String, Types>::new();
 
-        inner_dict.insert(Types::Integer(59), Types::StringType(String::from("reed")));
+        inner_dict.insert(
+            String::from("wowe"),
+            Types::StringType(String::from("reed")),
+        );
 
-        inner_dict.insert(Types::Integer(45), Types::Integer(1));
+        inner_dict.insert(String::from("af"), Types::Integer(1));
 
         let expected_values = [
             Types::StringType(String::from("spam")),
@@ -322,12 +325,9 @@ mod test {
             panic!("Cannot parse the given list");
         };
 
-        let mut inner_dict = HashMap::<Types, Types>::new();
+        let mut inner_dict = HashMap::<String, Types>::new();
 
-        inner_dict.insert(
-            Types::StringType(String::from("key")),
-            Types::StringType(String::from("value")),
-        );
+        inner_dict.insert("key".to_string(), Types::StringType(String::from("value")));
 
         let expected_list = vec![
             Types::Integer(42),
