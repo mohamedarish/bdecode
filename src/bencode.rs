@@ -66,6 +66,11 @@ impl Bencoder {
 
             index += length;
 
+            if index >= iterable.len() {
+                let error_message_no_value = format!("The provided key: {key} has no value");
+                return Err(Error::from(error_message_no_value));
+            }
+
             let (value, new_index) = match Self::matcher(&iterable[index..]) {
                 Ok(t) => t,
                 Err(e) => {
@@ -115,8 +120,7 @@ impl Bencoder {
                 let dict_end = match Self::find_end_marker(&iterable[index..]) {
                     Ok(end) => end,
                     Err(e) => {
-                        let error_message_end_marker_failure = format!("Error Occured: {e}");
-                        return Err(Error::from(error_message_end_marker_failure));
+                        return Err(Error::from(e));
                     }
                 };
 
@@ -125,8 +129,7 @@ impl Bencoder {
                 match Self::decode_dictionary(&iterable[old_index..index - 1]) {
                     Ok(dictionary) => dictionary,
                     Err(e) => {
-                        let error_message_dictionary_fail = format!("Error Occured: {e}");
-                        return Err(Error::from(error_message_dictionary_fail));
+                        return Err(Error::from(e));
                     }
                 }
             }
@@ -134,8 +137,7 @@ impl Bencoder {
                 let list_end = match Self::find_end_marker(&iterable[index..]) {
                     Ok(end) => end,
                     Err(e) => {
-                        let error_message_end_marker_failure = format!("Error Occured: {e}");
-                        return Err(Error::from(error_message_end_marker_failure));
+                        return Err(Error::from(e));
                     }
                 };
 
@@ -145,8 +147,7 @@ impl Bencoder {
                 match Self::decode_list(&iterable[old_index..index - 1]) {
                     Ok(list) => list,
                     Err(e) => {
-                        let error_message_dictionary_fail = format!("Error Occured: {e}");
-                        return Err(Error::from(error_message_dictionary_fail));
+                        return Err(Error::from(e));
                     }
                 }
             }
@@ -154,8 +155,7 @@ impl Bencoder {
                 let int_end = match Self::find_end_marker(&iterable[index..]) {
                     Ok(end) => end,
                     Err(e) => {
-                        let error_message_end_marker_failure = format!("Error Occured: {e}");
-                        return Err(Error::from(error_message_end_marker_failure));
+                        return Err(Error::from(e));
                     }
                 };
 
@@ -165,8 +165,7 @@ impl Bencoder {
                 match Self::decode_integer(&iterable[old_index..index - 1]) {
                     Ok(int) => int,
                     Err(e) => {
-                        let error_message_dictionary_fail = format!("Error Occured: {e}");
-                        return Err(Error::from(error_message_dictionary_fail));
+                        return Err(Error::from(e));
                     }
                 }
             }
@@ -174,6 +173,11 @@ impl Bencoder {
                 let (new_index, length) = Self::find_length_forwards(&iterable[index..]);
 
                 index += new_index;
+
+                if index + length > iterable.len() {
+                    let error_message_invalid_string_length_provided = format!("The provided string length is wrong, got length: {length}, but max length allowed is: {len}", len = iterable.len());
+                    return Err(Error::from(error_message_invalid_string_length_provided));
+                }
 
                 let string = string_from_collection(&iterable[index..index + length]);
 
@@ -221,7 +225,7 @@ impl Bencoder {
         let mut latest_string_ending = 0;
 
         while number_of_markers > 0 {
-            if index > iterable.len() {
+            if index >= iterable.len() {
                 let error_message_out_of_bounds = format!("No end Marker could be found for provided element: Index out of range ({index} / {length})", length = iterable.len());
                 return Err(Error::from(error_message_out_of_bounds));
             }
@@ -241,7 +245,9 @@ impl Bencoder {
                     let length = Self::find_length_backwards(iterable, index, latest_string_ending);
 
                     if length == 0 {
-                        let error_message_invalid_string_length_provided = format!("The length mentioned near index {index} is wrong, found length = {length}");
+                        let error_message_invalid_string_length_provided = format!(
+                            "The length mentioned near index {index} is wrong, found length = 0"
+                        );
                         return Err(Error::from(error_message_invalid_string_length_provided));
                     }
 
@@ -291,5 +297,88 @@ impl Bencoder {
         }
 
         (index + 1, length)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::rc::Rc;
+
+    use super::{Bencoder, Bencoding};
+
+    #[test]
+    fn test_valid_bencode() {
+        let string_to_check = String::from(
+            "d3:key5:value4:key1i365e4:key2i-365e4:key3li1ei2e4:spame4:key4d1:a1:b1:c1:dee",
+        );
+
+        let Ok(Bencoding::Dict(dictionary)) = Bencoder::decode(string_to_check.as_str()) else {
+            panic!("Expected dictionary");
+        };
+
+        let keys = [
+            String::from("key"),
+            String::from("key1"),
+            String::from("key2"),
+            String::from("key3"),
+            String::from("key4"),
+        ];
+
+        for (key, value) in &*dictionary {
+            assert!(keys.contains(key));
+
+            match value {
+                Bencoding::Int(int) => {
+                    assert!(*int == 365 || *int == -365);
+                }
+                Bencoding::Str(string) => {
+                    assert!(&**string == "value");
+                }
+                Bencoding::Dict(dict) => {
+                    let expected_keys = [String::from("a"), String::from("c")];
+                    let expected_values = [Rc::from("b"), Rc::from("d")];
+                    for (k, v) in &**dict {
+                        assert!(expected_keys.contains(k));
+
+                        let Bencoding::Str(s) = v else {
+                            panic!("Expected string as value for dictionary");
+                        };
+
+                        assert!(expected_values.contains(s));
+                    }
+                }
+                Bencoding::List(list) => {
+                    for elem in &**list {
+                        match elem {
+                            Bencoding::Int(integer) => {
+                                assert!(*integer == 1 || *integer == 2);
+                            }
+                            Bencoding::Str(s) => {
+                                assert_eq!(&**s, "spam");
+                            }
+                            _ => {
+                                panic!("Expected integer or string");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_invalid_bencode() {
+        let no_value = "d3:keye";
+        let invalid_length = "3:as";
+        let invalid_num = "i3re";
+        let missing_end_marker = "li43e";
+
+        assert!(Bencoder::decode(no_value).is_err());
+
+        assert!(Bencoder::decode(invalid_length).is_err());
+
+        assert!(Bencoder::decode(invalid_num).is_err());
+
+        assert!(Bencoder::decode(missing_end_marker).is_err());
     }
 }
