@@ -124,7 +124,7 @@ impl Decode {
             Bencode::Str(_) => Err(Error::InvalidFieldType {
                 optional,
                 name,
-                found: "integer",
+                found: "string",
                 required: "integer",
             }),
             Bencode::Int(integer) => Ok(*integer),
