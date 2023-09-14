@@ -1,8 +1,16 @@
 [package]
-name = "bdecode"
+name = "bendecode"
 version = "0.1.0"
 edition = "2021"
-
+authors = ["Mohamed Arish T P<arish1248@gmail.com>"]
+description = """
+bendecode is a simple bencode parser specifically made for torrent files.
+It converts the file provided into a format acceptable in rust(structs and enums).
+"""
+repository = "https://www.github.com/mohamedarish/bendecode"
+keywords = ["bittorrent", "decode", "encode", "bencode", "torrent"]
+categories = ["decoder", "torrent"]
+license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
