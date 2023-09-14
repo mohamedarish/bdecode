@@ -13,7 +13,6 @@ pub enum Error {
         found: &'static str,
         required: &'static str,
     },
-
     InvalidTokenFound {
         found: char,
         expected: &'static str,
