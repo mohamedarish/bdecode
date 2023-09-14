@@ -6,7 +6,7 @@
 )]
 
 //! `bendecode` is an simple bencode decoder
-//! It converts bencode files into a rust acceptible structure (structs and enums)
+//! It converts bencode files into a rust acceptable structure (structs and enums)
 //! This project can be improved alot by removing all allocations
 
 use std::collections::HashMap;

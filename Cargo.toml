@@ -1,6 +1,6 @@
 [package]
 name = "bendecode"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 authors = ["Mohamed Arish T P<arish1248@gmail.com>"]
 description = """
