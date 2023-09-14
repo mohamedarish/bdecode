@@ -381,10 +381,6 @@ mod test {
         let invalid_num = "i3re";
         let missing_end_marker = "li43e";
         let invalid_long_sequence = "d3:key5:valuei42e3:wowe";
-        //                                        ^ is the error as the key should be a string
-
-        // TODO
-        // Make more invalid bencode strings
 
         assert_eq!(
             Bencode::decode(no_value).expect_err("No value for key"),
