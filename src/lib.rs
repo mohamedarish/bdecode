@@ -13,7 +13,6 @@ use std::collections::HashMap;
 
 pub use bencode::Bencode;
 pub use error::{Error, Result};
-pub use torrent::Torrent;
 
 mod bencode;
 mod error;
