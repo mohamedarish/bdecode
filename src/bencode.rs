@@ -296,6 +296,11 @@ impl Bencode {
             length = length * 10 + (character_to_check as usize - 48);
 
             index += 1;
+
+            if index >= iterable.len() {
+                break;
+            }
+
             character_to_check = iterable[index];
         }
 
