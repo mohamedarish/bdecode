@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::{Bencode, Decode, Error, Result};
 
+#[derive(Debug)]
 pub struct Torrent {
     pub info: Info,
     pub announce: String,
@@ -12,6 +13,7 @@ pub struct Torrent {
     pub encoding: Option<String>,
 }
 
+#[derive(Debug)]
 pub struct Info {
     pub name: String,
     pub length: Option<i64>,
@@ -22,6 +24,7 @@ pub struct Info {
     pub private: bool,
 }
 
+#[derive(Debug)]
 pub struct File {
     pub length: i64,
     pub path: String,
@@ -224,7 +227,7 @@ impl Torrent {
     /// ```
     /// use bendecode::torrent::Torrent;
     ///
-    /// let content = "d9:announce1:a4:infod12:piecelengthi1e6:pieces1:a4:name1:a6:lengthi1eee";
+    /// let content = "d8:announce1:a4:infod12:piece lengthi1e6:pieces1:a4:name1:a6:lengthi1eee";
     ///     
     /// let torrent = Torrent::from(content);
     /// ````
@@ -356,5 +359,57 @@ impl Torrent {
         }
 
         Ok(announce_list)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::Error;
+
+    use super::Torrent;
+
+    #[test]
+    fn test_valid_bencode() {
+        let content = "d8:announce1:a4:infod12:piece lengthi1e6:pieces1:a4:name1:a6:lengthi1eee";
+
+        let bencode = Torrent::from(content);
+
+        assert!(bencode.is_ok());
+    }
+
+    #[test]
+    fn test_invalid_bencode() {
+        let required_field_not_found =
+            "d7:announc1:a4:infod12:piece lengthi1e6:pieces1:a4:name1:a6:lengthi1eee";
+
+        let required_field_invalid_type =
+            "d8:announcei24e4:infod12:piece lengthi1e6:pieces1:a4:name1:a6:lengthi1eee";
+
+        let optional_field_invalid_type = "d8:announce1:a13:creation date4:sep44:infod12:piece lengthi1e6:pieces1:a4:name1:a6:lengthi1eee";
+
+        assert_eq!(
+            Torrent::from(required_field_not_found).expect_err("Required field announce not found"),
+            Error::RequiredFieldNotFound { name: "announce" }
+        );
+
+        assert_eq!(
+            Torrent::from(required_field_invalid_type).expect_err("Required field invalid type"),
+            Error::InvalidFieldType {
+                optional: false,
+                name: "announce",
+                found: "integer",
+                required: "string"
+            }
+        );
+
+        assert_eq!(
+            Torrent::from(optional_field_invalid_type).expect_err("Optional field invalid type"),
+            Error::InvalidFieldType {
+                optional: true,
+                name: "creation date",
+                found: "string",
+                required: "integer"
+            }
+        );
     }
 }
