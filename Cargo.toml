@@ -7,7 +7,7 @@ description = """
 bendecode is a simple bencode parser specifically made for torrent files.
 It converts the file provided into a format acceptable in rust(structs and enums).
 """
-repository = "https://www.github.com/mohamedarish/bendecode"
+repository = "https://github.com/mohamedarish/bendecode"
 keywords = ["bittorrent", "decode", "bencode", "torrent"]
 categories = ["decoder", "torrent"]
 license = "MIT"
